@@ -1,4 +1,3 @@
-
 from pydantic import field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
@@ -10,6 +9,18 @@ class Settings(BaseSettings):
     API_V1_STR: str = "/api"
     ENVIRONMENT: str = "development"
     DEBUG: bool = True
+
+    @field_validator("DEBUG", mode="before")
+    @classmethod
+    def parse_debug(cls, value: bool | str) -> bool:
+        """Tolerate hosting platforms that expose DEBUG as a build label."""
+        if isinstance(value, str):
+            normalized = value.strip().lower()
+            if normalized in {"release", "production", "prod", "false", "0", "no", "off"}:
+                return False
+            if normalized in {"development", "dev", "debug", "true", "1", "yes", "on"}:
+                return True
+        return value
 
     # CORS
     ALLOWED_ORIGINS: list[str] | str = [

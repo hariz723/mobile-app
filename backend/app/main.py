@@ -3,7 +3,7 @@ import time
 from collections.abc import AsyncGenerator
 from contextlib import asynccontextmanager
 
-from fastapi import FastAPI, Request
+from fastapi import FastAPI, Request, WebSocket, WebSocketDisconnect, status
 from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
 from starlette.exceptions import HTTPException as StarletteHTTPException
@@ -17,6 +17,10 @@ from app.core.exceptions import (
     http_exception_handler,
     validation_exception_handler,
 )
+from app.core.security import decode_access_token
+from app.db import SessionLocal, create_tables
+from app.realtime import location_broadcaster
+from app.repositories.user_repository import UserRepository
 
 # Configure logging
 logging.basicConfig(
@@ -30,7 +34,14 @@ logger = logging.getLogger("location_tracker")
 async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
     """Application lifespan manager for startup and shutdown events."""
     logger.info(f"Starting {settings.PROJECT_NAME} v{settings.VERSION} in [{settings.ENVIRONMENT}] mode")
-    # Resources like database connection pool and redis will be verified/initialized here
+    try:
+        create_tables()
+        app.state.database_ready = True
+    except Exception:
+        # Health checks remain available when an external database is offline;
+        # data endpoints will surface their normal database error until it recovers.
+        app.state.database_ready = False
+        logger.exception("Database initialization failed")
     yield
     logger.info(f"Shutting down {settings.PROJECT_NAME}...")
 
@@ -99,3 +110,30 @@ async def health():
         "environment": settings.ENVIRONMENT,
         "version": settings.VERSION,
     }
+
+
+@app.websocket("/ws/admin/locations")
+async def admin_location_websocket(websocket: WebSocket, token: str | None = None) -> None:
+    """Authenticated live location feed for administrators only."""
+    if not token:
+        await websocket.close(code=status.WS_1008_POLICY_VIOLATION)
+        return
+    try:
+        user_id = decode_access_token(token)
+        with SessionLocal() as db:
+            user = UserRepository(db).get_by_id(user_id)
+            is_admin = user is not None and user.role == "admin"
+        if not is_admin:
+            await websocket.close(code=status.WS_1008_POLICY_VIOLATION)
+            return
+    except Exception:
+        await websocket.close(code=status.WS_1008_POLICY_VIOLATION)
+        return
+
+    await location_broadcaster.connect(websocket)
+    try:
+        while True:
+            # Receive keeps the connection open and lets a browser close cleanly.
+            await websocket.receive()
+    except WebSocketDisconnect:
+        location_broadcaster.disconnect(websocket)

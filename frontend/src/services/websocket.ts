@@ -21,9 +21,17 @@ class AdminWebSocketService {
     if (!token) return;
 
     this.shouldReconnect = true;
-    const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-    const host = window.location.host;
-    const wsUrl = `${protocol}//${host}/ws/admin/locations?token=${token}`;
+    let wsUrl: string;
+    const configuredWs = import.meta.env.VITE_WS_BASE_URL;
+
+    if (configuredWs) {
+      const cleanBase = configuredWs.replace(/\/$/, '');
+      wsUrl = `${cleanBase}/ws/admin/locations?token=${token}`;
+    } else {
+      const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+      const host = window.location.host;
+      wsUrl = `${protocol}//${host}/ws/admin/locations?token=${token}`;
+    }
 
     try {
       this.ws = new WebSocket(wsUrl);

@@ -37,30 +37,12 @@ export const UserDashboard: React.FC<UserDashboardProps> = ({ user }) => {
   const watchIdRef = useRef<number | null>(null);
   const lastSentCoordsRef = useRef<{ lat: number; lng: number; time: number } | null>(null);
 
-  // Query browser permissions on mount
-  useEffect(() => {
-    if (navigator.permissions && navigator.permissions.query) {
-      navigator.permissions
-        .query({ name: 'geolocation' as PermissionName })
-        .then((permission) => {
-          setPermissionStatus(permission.state);
-          permission.onchange = () => {
-            setPermissionStatus(permission.state);
-          };
-        })
-        .catch(() => {
-          setPermissionStatus('unknown');
-        });
+  const stopWatching = () => {
+    if (watchIdRef.current !== null) {
+      navigator.geolocation.clearWatch(watchIdRef.current);
+      watchIdRef.current = null;
     }
-
-    // Load initial settings and last location
-    loadInitialData();
-
-    // Clean up watcher on unmount
-    return () => {
-      stopWatching();
-    };
-  }, []);
+  };
 
   const loadInitialData = async () => {
     try {
@@ -92,12 +74,30 @@ export const UserDashboard: React.FC<UserDashboardProps> = ({ user }) => {
     }
   };
 
-  const stopWatching = () => {
-    if (watchIdRef.current !== null) {
-      navigator.geolocation.clearWatch(watchIdRef.current);
-      watchIdRef.current = null;
+  // Query browser permissions on mount
+  useEffect(() => {
+    if (navigator.permissions && navigator.permissions.query) {
+      navigator.permissions
+        .query({ name: 'geolocation' as PermissionName })
+        .then((permission) => {
+          setPermissionStatus(permission.state);
+          permission.onchange = () => {
+            setPermissionStatus(permission.state);
+          };
+        })
+        .catch(() => {
+          setPermissionStatus('unknown');
+        });
     }
-  };
+
+    // Load initial settings and last location
+    loadInitialData();
+
+    // Clean up watcher on unmount
+    return () => {
+      stopWatching();
+    };
+  }, []);
 
   const startWatching = () => {
     if (!('geolocation' in navigator)) {

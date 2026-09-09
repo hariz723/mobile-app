@@ -35,6 +35,38 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
   const [auditLogs, setAuditLogs] = useState<AuditLogRecord[]>([]);
   const [loadingLogs, setLoadingLogs] = useState(false);
 
+  const fetchUsers = async () => {
+    try {
+      const res = await adminApi.getUsers();
+      setUsers(res.data);
+
+      // Preload initial locations for users with active status
+      const locationsToLoad: MapUserLocation[] = [];
+      for (const u of res.data) {
+        if (u.collection_enabled) {
+          try {
+            const locRes = await adminApi.getUserLocation(u.id);
+            if (locRes.data) {
+              locationsToLoad.push({
+                userId: u.id,
+                userName: u.name,
+                latitude: locRes.data.latitude,
+                longitude: locRes.data.longitude,
+                accuracy: locRes.data.accuracy,
+                updatedAt: locRes.data.recorded_at,
+              });
+            }
+          } catch (err) {
+            console.error(`Could not fetch location for user ${u.id}`, err);
+          }
+        }
+      }
+      setLiveLocations(locationsToLoad);
+    } catch (err) {
+      console.error('Failed to fetch users list', err);
+    }
+  };
+
   // Initial load
   useEffect(() => {
     fetchUsers();
@@ -80,38 +112,6 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ user }) => {
       adminWs.disconnect();
     };
   }, []);
-
-  const fetchUsers = async () => {
-    try {
-      const res = await adminApi.getUsers();
-      setUsers(res.data);
-
-      // Preload initial locations for users with active status
-      const locationsToLoad: MapUserLocation[] = [];
-      for (const u of res.data) {
-        if (u.collection_enabled) {
-          try {
-            const locRes = await adminApi.getUserLocation(u.id);
-            if (locRes.data) {
-              locationsToLoad.push({
-                userId: u.id,
-                userName: u.name,
-                latitude: locRes.data.latitude,
-                longitude: locRes.data.longitude,
-                accuracy: locRes.data.accuracy,
-                updatedAt: locRes.data.recorded_at,
-              });
-            }
-          } catch (err) {
-            console.error(`Could not fetch location for user ${u.id}`, err);
-          }
-        }
-      }
-      setLiveLocations(locationsToLoad);
-    } catch (err) {
-      console.error('Failed to fetch users list', err);
-    }
-  };
 
   const handleFetchHistory = async () => {
     if (!historyUser) return;

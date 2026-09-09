@@ -1,5 +1,7 @@
-from datetime import datetime, timezone
+from datetime import UTC, datetime
+
 from fastapi import APIRouter, status
+
 from app.core.config import settings
 from app.schemas.health import HealthCheckResponse, HealthStatus
 
@@ -18,7 +20,7 @@ async def health_check() -> HealthCheckResponse:
         success=True,
         data=HealthStatus(
             status="healthy",
-            timestamp=datetime.now(timezone.utc),
+            timestamp=datetime.now(UTC),
             app_name=settings.PROJECT_NAME,
             version=settings.VERSION,
             environment=settings.ENVIRONMENT,

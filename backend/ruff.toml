@@ -1,0 +1,21 @@
+target-version = "py312"
+line-length = 120
+
+[lint]
+select = [
+    "E",   # pycodestyle errors
+    "W",   # pycodestyle warnings
+    "F",   # Pyflakes
+    "I",   # isort
+    "B",   # flake8-bugbear
+    "UP",  # pyupgrade
+]
+ignore = [
+    "B008",  # do not perform function calls in argument defaults (FastAPI Depends/Query pattern)
+    "W191",  # indentation contains tabs
+    "E402",  # module level import not at top of file (needed for sys.path adjustment)
+    "UP046", # Generic class type parameter syntax
+]
+
+[lint.isort]
+known-first-party = ["app"]

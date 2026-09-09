@@ -22,7 +22,7 @@ export const App: React.FC = () => {
           const res = await authApi.getMe();
           setUser(res.data);
           localStorage.setItem('user', JSON.stringify(res.data));
-        } catch (e) {
+        } catch {
           console.warn('Session expired or backend unreachable, using cached credentials if any');
         }
       }

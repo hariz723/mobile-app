@@ -1,4 +1,6 @@
-from typing import Generic, Optional, TypeVar, Any
+from typing import Any, Generic, TypeVar
+
+from fastapi import Query
 from pydantic import BaseModel
 
 DataT = TypeVar("DataT")
@@ -7,7 +9,7 @@ DataT = TypeVar("DataT")
 class ErrorDetail(BaseModel):
     code: str
     message: str
-    details: Optional[Any] = None
+    details: Any | None = None
 
 
 class BaseApiResponse(BaseModel):
@@ -15,10 +17,22 @@ class BaseApiResponse(BaseModel):
 
 
 class ApiResponse(BaseApiResponse, Generic[DataT]):
-    data: Optional[DataT] = None
-    message: Optional[str] = None
+    data: DataT | None = None
+    message: str | None = None
 
 
 class ErrorResponse(BaseApiResponse):
     success: bool = False
     error: ErrorDetail
+
+
+class PaginationParams:
+    """Standard pagination parameters dependency."""
+
+    def __init__(
+        self,
+        skip: int = Query(0, ge=0, description="Offset for pagination"),
+        limit: int = Query(50, ge=1, le=500, description="Number of items to return"),
+    ):
+        self.skip = skip
+        self.limit = limit
