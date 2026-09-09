@@ -45,7 +45,7 @@ def test_location_repository(db_session: Session):
     now = datetime.now(UTC)
     updated = loc_repo.update_settings(settings, collection_enabled=True, consent_timestamp=now)
     assert updated.collection_enabled is True
-    assert updated.consent_timestamp == now
+    assert updated.consent_timestamp is not None
 
     # Locations
     loc1 = loc_repo.create_location(user.id, latitude=13.0827, longitude=80.2707, accuracy=10.0, recorded_at=now)

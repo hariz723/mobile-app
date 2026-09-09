@@ -14,7 +14,7 @@ from app.services.location_service import LocationService
 def test_auth_service(db_session: Session):
     service = AuthService(db_session)
 
-    req = RegisterRequest(name="David", email="david@example.com", password="password123")
+    req = RegisterRequest(name="David", email="david@example.com", password="SecurePassword123!")
     res = service.register(req)
 
     assert res.access_token is not None
@@ -22,12 +22,12 @@ def test_auth_service(db_session: Session):
     assert res.user.role == "user"
 
     # Login
-    login_req = LoginRequest(email="david@example.com", password="password123")
+    login_req = LoginRequest(email="david@example.com", password="SecurePassword123!")
     login_res = service.login(login_req)
     assert login_res.access_token is not None
 
     # Invalid login raises HTTPException (401)
-    bad_req = LoginRequest(email="david@example.com", password="wrongpassword")
+    bad_req = LoginRequest(email="david@example.com", password="WrongPassword123!")
     with pytest.raises(HTTPException):
         service.login(bad_req)
 
@@ -37,7 +37,7 @@ async def test_location_service_consent_flow(db_session: Session):
     auth_service = AuthService(db_session)
     location_service = LocationService(db_session)
 
-    res = auth_service.register(RegisterRequest(name="Eve", email="eve@example.com", password="password123"))
+    res = auth_service.register(RegisterRequest(name="Eve", email="eve@example.com", password="SecurePassword123!"))
     user = auth_service.user_repo.get_by_id(res.user.id)
     assert user is not None
 

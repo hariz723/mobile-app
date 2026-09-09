@@ -84,7 +84,9 @@ class LocationRepository(BaseRepository[LocationPoint]):
     def delete_history_older_than(self, user_id: int, cutoff: datetime) -> int:
         """Enforce data retention policy by purging records older than cutoff."""
         result = self.db.execute(
-            delete(LocationPoint).where(LocationPoint.user_id == user_id, LocationPoint.recorded_at < cutoff)
+            delete(LocationPoint)
+            .where(LocationPoint.user_id == user_id, LocationPoint.recorded_at < cutoff)
+            .execution_options(synchronize_session=False)
         )
         return result.rowcount
 
