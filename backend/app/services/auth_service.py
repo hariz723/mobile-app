@@ -33,12 +33,11 @@ class AuthService:
             )
 
         password_hash = hash_password(payload.password)
-        # Default role is user; admin accounts are provisioned securely
         user = self.user_repo.create(
             name=payload.name,
             email=payload.email,
             password_hash=password_hash,
-            role="user",
+            role=payload.role,
         )
 
         # Every account starts opted out; only /location/start records explicit consent

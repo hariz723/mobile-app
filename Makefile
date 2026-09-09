@@ -31,6 +31,11 @@ install-frontend: ## Install frontend npm dependencies
 	@echo "Installing frontend dependencies..."
 	cd $(FRONTEND_DIR) && npm install
 
+.PHONY: create-admin
+create-admin: ## Create default admin user (email=admin@example.com password=AdminPassword123!)
+	@echo "Provisioning administrator account..."
+	cd $(BACKEND_DIR) && $(CONDA_RUN) python -m app.create_admin --name "System Admin" --email "admin@example.com" --password "AdminPassword123!"
+
 ## Development Servers
 .PHONY: run-backend
 run-backend: ## Run FastAPI backend development server

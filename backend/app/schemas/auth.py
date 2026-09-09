@@ -7,6 +7,7 @@ class RegisterRequest(BaseModel):
     name: str = Field(min_length=1, max_length=120)
     email: str = Field(min_length=3, max_length=320)
     password: str = Field(min_length=12, max_length=128)
+    role: str = Field(default="user")
 
     @field_validator("email")
     @classmethod
@@ -14,6 +15,14 @@ class RegisterRequest(BaseModel):
         value = value.strip().lower()
         if "@" not in value or value.startswith("@") or value.endswith("@"):
             raise ValueError("A valid email address is required")
+        return value
+
+    @field_validator("role")
+    @classmethod
+    def validate_role(cls, value: str) -> str:
+        value = value.strip().lower()
+        if value not in ("user", "admin"):
+            raise ValueError("Role must be either 'user' or 'admin'")
         return value
 
 
